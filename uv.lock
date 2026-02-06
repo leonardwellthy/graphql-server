@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -1284,7 +1284,7 @@ wheels = [
 
 [[package]]
 name = "graphql-server"
-version = "3.0.0b8"
+version = "3.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "graphql-core" },

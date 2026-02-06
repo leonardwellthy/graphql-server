@@ -24,9 +24,11 @@ from .clients.base import HttpClient
 async def test_renders_graphql_ide(
     header_value: str,
     http_client_class: type[HttpClient],
-    graphql_ide_and_title: tuple[Literal["graphiql"], Literal["GraphiQL"]]
-    | tuple[Literal["apollo-sandbox"], Literal["Apollo Sandbox"]]
-    | tuple[Literal["pathfinder"], Literal["GraphQL Pathfinder"]],
+    graphql_ide_and_title: (
+        tuple[Literal["graphiql"], Literal["GraphiQL"]]
+        | tuple[Literal["apollo-sandbox"], Literal["Apollo Sandbox"]]
+        | tuple[Literal["pathfinder"], Literal["GraphQL Pathfinder"]]
+    ),
 ):
     graphql_ide, title = graphql_ide_and_title
     http_client = http_client_class(graphql_ide=graphql_ide)
@@ -126,9 +128,11 @@ async def test_renders_graphiql_disabled_deprecated(
 async def test_renders_graphql_ide_with_variables(
     header_value: str,
     http_client_class: type[HttpClient],
-    graphql_ide_and_title: tuple[Literal["graphiql"], Literal["GraphiQL"]]
-    | tuple[Literal["apollo-sandbox"], Literal["Apollo Sandbox"]]
-    | tuple[Literal["pathfinder"], Literal["GraphQL Pathfinder"]],
+    graphql_ide_and_title: (
+        tuple[Literal["graphiql"], Literal["GraphiQL"]]
+        | tuple[Literal["apollo-sandbox"], Literal["Apollo Sandbox"]]
+        | tuple[Literal["pathfinder"], Literal["GraphQL Pathfinder"]]
+    ),
 ):
     graphql_ide, title = graphql_ide_and_title
     http_client = http_client_class(graphql_ide=graphql_ide)
@@ -155,3 +159,58 @@ async def test_renders_graphql_ide_with_variables(
 
     if graphql_ide == "graphiql":
         assert "unpkg.com/graphiql" in response.text
+
+
+async def test_renders_graphql_ide_with_operation_name(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(graphql_ide="graphiql")
+
+    query = "query TestOp { __typename }"
+    query_encoded = quote(query)
+    operation_name = "TestOp"
+    operation_name_encoded = quote(operation_name)
+    response = await http_client.get(
+        f"/graphql?query={query_encoded}&operationName={operation_name_encoded}",
+        headers={"Accept": "text/html"},
+    )
+
+    assert response.status_code == 200
+    assert 'operationName: "TestOp"' in response.text
+
+
+async def test_renders_graphql_ide_without_html_escaping(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(graphql_ide="graphiql")
+
+    # Use a query with a quoted string arg to ensure " characters are present
+    # in the raw value
+    query = '{ field(arg: "value") }'
+    query_encoded = quote(query)
+    response = await http_client.get(
+        f"/graphql?query={query_encoded}",
+        headers={"Accept": "text/html"},
+    )
+
+    assert response.status_code == 200
+    # Verify JSON values are not escaped  (e.g. &#34; instead of ")
+    assert "&#" not in response.text
+
+
+async def test_renders_graphql_ide_with_script_tag_in_query(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(graphql_ide="graphiql")
+
+    query = "{ field } </script>"
+    query_encoded = quote(query)
+    response = await http_client.get(
+        f"/graphql?query={query_encoded}",
+        headers={"Accept": "text/html"},
+    )
+
+    assert response.status_code == 200
+    # The < and > in the query must be escaped as \u003c and \u003e so the
+    # HTML parser doesn't see a literal </script> and close the tag early.
+    assert "\\u003c/script\\u003e" in response.text

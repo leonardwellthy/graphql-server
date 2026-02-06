@@ -78,6 +78,13 @@
       href="https://unpkg.com/@graphiql/plugin-explorer@1.0.2/dist/style.css"
       integrity="sha384-5DFJlDPW2tSATRbM8kzoP1j194jexLswuNmClWoRr2Q0x7R68JIQzPHZ02Faktwi"
     />
+
+    <link
+      crossorigin
+      rel="stylesheet"
+      href="https://unpkg.com/codemirror@5.65.16/addon/fold/foldgutter.css"
+      integrity="sha384-gW0T7WIPsj+5+b/qOsKxiwxdUCfZsjfGtzACaGGLdwEHq/pZ4aS5daCrQznA4Y8H"
+    />
   </head>
 
   <body>
@@ -182,6 +189,15 @@
       function onEditOperationName(newOperationName) {
         parameters.operationName = newOperationName;
         updateURL();
+      }
+      // Produce a Location query string from a parameter object.
+      function locationQuery(params) {
+        return '?' + Object.keys(params).filter(function (key) {
+          return Boolean(params[key]);
+        }).map(function (key) {
+          return encodeURIComponent(key) + '=' +
+            encodeURIComponent(params[key]);
+        }).join('&');
       }
       function updateURL() {
         history.replaceState(null, null, locationQuery(parameters));

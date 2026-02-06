@@ -37,7 +37,11 @@ def process_result(
 def tojson(value):
     if value not in ["true", "false", "null", "undefined"]:
         value = json.dumps(value)
-        # value = escape_js_value(value)
+        # Escape characters that are significant to the HTML parser when
+        # embedded inside <script> tags. Using JS Unicode escapes (\u003c)
+        # rather than HTML entities (&#60;) so JavaScript correctly decodes
+        # them at runtime while the HTML parser never sees raw < or >.
+        value = value.replace("<", "\\u003c").replace(">", "\\u003e")
     return value
 
 
